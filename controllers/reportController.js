@@ -27,38 +27,42 @@ export const createReport = async (req, res) => {
     try {
         // Validar datos requeridos
         if (!clientName) {
-            return res.status(400).json({ message: "Client name is required" });
+            return res.status(400).json({ message: "El nombre del cliente es obligatorio" });
         }
         if (!clientAddress) {
-            return res.status(400).json({ message: "Client address is required" });
+            return res.status(400).json({ message: "La dirección del cliente es obligatoria" });
         }
         if (!clientPhone) {
-            return res.status(400).json({ message: "Client phone is required" });
+            return res.status(400).json({ message: "El teléfono del cliente es obligatorio" });
         }
         if (!clientDNI) {
-            return res.status(400).json({ message: "Client DNI is required" });
+            return res.status(400).json({ message: "El DNI del cliente es obligatorio" });
         }
         if (!equipment || !equipment.type || !equipment.brand || !equipment.model) {
-            return res.status(400).json({ message: "Equipment type, brand, and model are required" });
+            return res.status(400).json({ message: "El tipo, marca y modelo del equipo son obligatorios" });
         }
         if (!faultDescription) {
-            return res.status(400).json({ message: "Fault description is required" });
+            return res.status(400).json({ message: "La descripción de la falla es obligatoria" });
         }
         if (!receptionDate) {
-            return res.status(400).json({ message: "Reception date is required" });
+            return res.status(400).json({ message: "La fecha de recepción es obligatoria" });
         }
         if (!deliveryDate) {
-            return res.status(400).json({ message: "Delivery date is required" });
+            return res.status(400).json({ message: "La fecha de entrega es obligatoria" });
         }
         if (!agreedPrice || isNaN(agreedPrice) || parseFloat(agreedPrice) <= 0) {
-            return res.status(400).json({ message: "Agreed price must be a valid positive number" });
+            return res.status(400).json({ message: "El precio acordado debe ser un número positivo válido" });
+        }
+
+        // Validar que partsOrdered no sea true si partsRequested es false
+        const partsRequestedBool = partsRequested === 'true' || partsRequested === true;
+        const partsOrderedBool = partsOrdered === 'true' || partsOrdered === true;
+        if (partsOrderedBool && !partsRequestedBool) {
+            return res.status(400).json({ message: "No puedes marcar 'Partes Solicitadas' si no has marcado 'Necesita Partes'" });
         }
 
         const filePath = req.file ? req.file.path : null;
 
-        // Convertir campos booleanos si son strings
-        const partsRequestedBool = partsRequested === 'true' || partsRequested === true;
-        const partsOrderedBool = partsOrdered === 'true' || partsOrdered === true;
         const readyForPickupBool = readyForPickup === 'true' || readyForPickup === true;
 
         const report = new Report({
@@ -96,7 +100,7 @@ export const createReport = async (req, res) => {
         res.status(201).json(createdReport);
     } catch (error) {
         console.error("Error al crear el reporte:", error);
-        res.status(500).json({ message: "Error creating report", error: error.message });
+        res.status(500).json({ message: "Error al crear el reporte", error: error.message });
     }
 };
 
@@ -108,7 +112,7 @@ export const getReports = async (req, res) => {
         res.json(reports);
     } catch (error) {
         console.error("Error al obtener los reportes:", error);
-        res.status(500).json({ message: 'Error fetching reports', error: error.message });
+        res.status(500).json({ message: 'Error al obtener los reportes', error: error.message });
     }
 };
 
@@ -120,40 +124,51 @@ export const updateReport = async (req, res) => {
         const report = await Report.findById(req.params.id);
 
         if (!report) {
-            return res.status(404).json({ message: "Report not found" });
+            return res.status(404).json({ message: "Reporte no encontrado" });
         }
 
         const filePath = req.file ? req.file.path : report.files;
 
         // Validar datos requeridos
         if (req.body.clientName && !req.body.clientName) {
-            return res.status(400).json({ message: "Client name is required" });
+            return res.status(400).json({ message: "El nombre del cliente es obligatorio" });
         }
         if (req.body.clientAddress && !req.body.clientAddress) {
-            return res.status(400).json({ message: "Client address is required" });
+            return res.status(400).json({ message: "La dirección del cliente es obligatoria" });
         }
         if (req.body.clientPhone && !req.body.clientPhone) {
-            return res.status(400).json({ message: "Client phone is required" });
+            return res.status(400).json({ message: "El teléfono del cliente es obligatorio" });
         }
         if (req.body.clientDNI && !req.body.clientDNI) {
-            return res.status(400).json({ message: "Client DNI is required" });
+            return res.status(400).json({ message: "El DNI del cliente es obligatorio" });
         }
         if (req.body.equipment) {
             if (!req.body.equipment.type || !req.body.equipment.brand || !req.body.equipment.model) {
-                return res.status(400).json({ message: "Equipment type, brand, and model are required" });
+                return res.status(400).json({ message: "El tipo, marca y modelo del equipo son obligatorios" });
             }
         }
         if (req.body.faultDescription && !req.body.faultDescription) {
-            return res.status(400).json({ message: "Fault description is required" });
+            return res.status(400).json({ message: "La descripción de la falla es obligatoria" });
         }
         if (req.body.receptionDate && !req.body.receptionDate) {
-            return res.status(400).json({ message: "Reception date is required" });
+            return res.status(400).json({ message: "La fecha de recepción es obligatoria" });
         }
         if (req.body.deliveryDate && !req.body.deliveryDate) {
-            return res.status(400).json({ message: "Delivery date is required" });
+            return res.status(400).json({ message: "La fecha de entrega es obligatoria" });
         }
         if (req.body.agreedPrice && (isNaN(req.body.agreedPrice) || parseFloat(req.body.agreedPrice) <= 0)) {
-            return res.status(400).json({ message: "Agreed price must be a valid positive number" });
+            return res.status(400).json({ message: "El precio acordado debe ser un número positivo válido" });
+        }
+
+        // Validar que partsOrdered no sea true si partsRequested es false
+        const partsRequestedBool = req.body.partsRequested !== undefined
+            ? (req.body.partsRequested === 'true' || req.body.partsRequested === true)
+            : report.partsRequested;
+        const partsOrderedBool = req.body.partsOrdered !== undefined
+            ? (req.body.partsOrdered === 'true' || req.body.partsOrdered === true)
+            : report.partsOrdered;
+        if (partsOrderedBool && !partsRequestedBool) {
+            return res.status(400).json({ message: "No puedes marcar 'Partes Solicitadas' si no has marcado 'Necesita Partes'" });
         }
 
         // Convertir campos booleanos si son strings
@@ -199,7 +214,7 @@ export const updateReport = async (req, res) => {
         res.json(updatedReport);
     } catch (error) {
         console.error("Error al actualizar el reporte:", error);
-        res.status(500).json({ message: "Error updating report", error: error.message });
+        res.status(500).json({ message: "Error al actualizar el reporte", error: error.message });
     }
 };
 
@@ -210,12 +225,12 @@ export const deleteReport = async (req, res) => {
 
         if (report) {
             console.log("🚀 Reporte eliminado:", report);
-            res.json({ message: 'Report removed' });
+            res.json({ message: 'Reporte eliminado' });
         } else {
-            res.status(404).json({ message: 'Report not found' });
+            res.status(404).json({ message: 'Reporte no encontrado' });
         }
     } catch (error) {
         console.error("Error al eliminar el reporte:", error);
-        res.status(500).json({ message: 'Error deleting report', error: error.message });
+        res.status(500).json({ message: 'Error al eliminar el reporte', error: error.message });
     }
 };
